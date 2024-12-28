@@ -67,6 +67,10 @@ func UserRouter(r chi.Router, uc controllers.UserController) {
 			"/me",
 			uc.FindMe(),
 		)
+		apiRouter.Post(
+			"/me/update/avatar",
+			uc.UpdateUserAvatar(),
+		)
 		// apiRouter.Get(
 		// 	"/email/confirm/{token}",
 		// 	uc.ConfirmUserEmailByEmailConfirmationToken(),

@@ -5,7 +5,9 @@ import (
 	"go-rest-api/config"
 	"go-rest-api/internal/domain"
 	"go-rest-api/internal/infra/database/repositories"
+	"go-rest-api/internal/infra/filesystem"
 	"go-rest-api/internal/infra/logger"
+	"strconv"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -17,19 +19,24 @@ type UserService interface {
 	FindByEmail(email string) (domain.User, error)
 	FindByEmailConfirmationToken(confToken string) (domain.User, error)
 	Save(user domain.User) (domain.User, error)
+	UpdateUserAvatar(user domain.User) (domain.User, error)
 	ConfirmUserEmail(user domain.User) error
 	Delete(id uint64) error
 }
 
 type userService struct {
-	userRepo      repositories.UserRepository
-	configuration config.Configuration
+	userRepo          repositories.UserRepository
+	configuration     config.Configuration
+	cloudinaryService *filesystem.CloudinaryService
 }
 
-func NewUserService(userRepository repositories.UserRepository, cfg config.Configuration) UserService {
+func NewUserService(userRepository repositories.UserRepository,
+	cfg config.Configuration, cloudinaryService *filesystem.CloudinaryService) UserService {
+
 	return userService{
-		userRepo:      userRepository,
-		configuration: cfg,
+		userRepo:          userRepository,
+		configuration:     cfg,
+		cloudinaryService: cloudinaryService,
 	}
 }
 
@@ -82,6 +89,25 @@ func (u userService) Save(user domain.User) (domain.User, error) {
 	return user, nil
 }
 
+func (u userService) UpdateUserAvatar(user domain.User) (domain.User, error) {
+	imageFileName := "file_" + strconv.FormatInt(time.Now().UnixNano(), 32)
+
+	imageUrl, err := u.cloudinaryService.SaveImageToCloudinary(*user.Avatar, imageFileName)
+	if err != nil {
+		logger.Logger.Error(err)
+		return domain.User{}, err
+	}
+
+	*user.Avatar = imageUrl
+
+	updatedUser, err := u.userRepo.UpdateUserAvatar(user)
+	if err != nil {
+		logger.Logger.Error(err)
+		return domain.User{}, err
+	}
+	return updatedUser, nil
+}
+
 func (u userService) ConfirmUserEmail(user domain.User) error {
 	currentUser, err := u.FindByEmailConfirmationToken(user.EmailConfirmationToken)
 	if err != nil {
@@ -99,7 +125,21 @@ func (u userService) ConfirmUserEmail(user domain.User) error {
 }
 
 func (u userService) Delete(id uint64) error {
-	err := u.userRepo.Delete(id)
+	deletedUser, err := u.FindById(id)
+	if err != nil {
+		logger.Logger.Error(err)
+		return err
+	}
+
+	if deletedUser.Avatar != nil {
+		err = u.cloudinaryService.DeleteImage(*deletedUser.Avatar)
+		if err != nil {
+			logger.Logger.Error(err)
+			return err
+		}
+	}
+
+	err = u.userRepo.Delete(id)
 	if err != nil {
 		return err
 	}

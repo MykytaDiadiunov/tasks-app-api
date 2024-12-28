@@ -7,12 +7,13 @@ import (
 )
 
 type user struct {
-	Id                     uint64 `db:"id, omitempty"`
-	Name                   string `db:"name"`
-	Email                  string `db:"email"`
-	Password               string `db:"password"`
-	EmailConfirmed         bool   `db:"email_confirmed"`
-	EmailConfirmationToken string `db:"email_confirmation_token"`
+	Id                     uint64  `db:"id, omitempty"`
+	Name                   string  `db:"name"`
+	Email                  string  `db:"email"`
+	Avatar                 *string `db:"avatar"`
+	Password               string  `db:"password"`
+	EmailConfirmed         bool    `db:"email_confirmed"`
+	EmailConfirmationToken string  `db:"email_confirmation_token"`
 }
 
 type UserRepository interface {
@@ -20,6 +21,7 @@ type UserRepository interface {
 	FindByEmail(email string) (domain.User, error)
 	FindByEmailConfirmationToken(confToken string) (domain.User, error)
 	Save(user domain.User) (domain.User, error)
+	UpdateUserAvatar(user domain.User) (domain.User, error)
 	ConfirmUserEmail(user domain.User) error
 	Delete(id uint64) error
 }
@@ -41,6 +43,7 @@ func (ur userRepository) FindById(id uint64) (domain.User, error) {
 		&userModel.Id,
 		&userModel.Name,
 		&userModel.Email,
+		&userModel.Avatar,
 		&userModel.Password,
 		&userModel.EmailConfirmed,
 		&userModel.EmailConfirmationToken,
@@ -61,6 +64,7 @@ func (ur userRepository) FindByEmail(email string) (domain.User, error) {
 		&userModel.Id,
 		&userModel.Name,
 		&userModel.Email,
+		&userModel.Avatar,
 		&userModel.Password,
 		&userModel.EmailConfirmed,
 		&userModel.EmailConfirmationToken,
@@ -81,6 +85,8 @@ func (ur userRepository) FindByEmailConfirmationToken(confToken string) (domain.
 		&userModel.Id,
 		&userModel.Name,
 		&userModel.Email,
+		&userModel.Avatar,
+		&userModel.Password,
 		&userModel.EmailConfirmed,
 		&userModel.EmailConfirmationToken,
 	)
@@ -101,6 +107,19 @@ func (ur userRepository) Save(user domain.User) (domain.User, error) {
 		logger.Logger.Error(err)
 		return domain.User{}, err
 	}
+	return ur.modelToDomain(userModel), nil
+}
+
+func (ur userRepository) UpdateUserAvatar(user domain.User) (domain.User, error) {
+	userModel := ur.domainToModel(user)
+	sqlCommand := `UPDATE users SET avatar=$1 WHERE id=$2`
+
+	_, err := ur.db.Exec(sqlCommand, userModel.Avatar, userModel.Id)
+	if err != nil {
+		logger.Logger.Error(err)
+		return domain.User{}, err
+	}
+
 	return ur.modelToDomain(userModel), nil
 }
 
@@ -131,6 +150,7 @@ func (ur userRepository) modelToDomain(u user) domain.User {
 		Id:                     u.Id,
 		Name:                   u.Name,
 		Email:                  u.Email,
+		Avatar:                 u.Avatar,
 		Password:               u.Password,
 		EmailConfirmed:         u.EmailConfirmed,
 		EmailConfirmationToken: u.EmailConfirmationToken,
@@ -142,6 +162,7 @@ func (ur userRepository) domainToModel(u domain.User) user {
 		Id:                     u.Id,
 		Name:                   u.Name,
 		Email:                  u.Email,
+		Avatar:                 u.Avatar,
 		Password:               u.Password,
 		EmailConfirmed:         u.EmailConfirmed,
 		EmailConfirmationToken: u.EmailConfirmationToken,

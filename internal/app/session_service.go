@@ -40,7 +40,6 @@ func (s sessionService) Register(user domain.User) (domain.User, string, error) 
 	if err == nil {
 		return domain.User{}, "", errors.New("invalid credentials")
 	} else if !errors.Is(err, sql.ErrNoRows) {
-		logger.Logger.Error(err)
 		return domain.User{}, "", err
 	}
 

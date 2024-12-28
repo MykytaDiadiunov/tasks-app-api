@@ -13,6 +13,10 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
+type UpdateAvatarRequest struct {
+	AvatarBase64String string `json:"avatar" validate:"required"`
+}
+
 func (r RegisterRequest) ToDomainModel() (interface{}, error) {
 	return domain.User{
 		Name:     r.Name,
@@ -25,5 +29,11 @@ func (r LoginRequest) ToDomainModel() (interface{}, error) {
 	return domain.User{
 		Email:    r.Email,
 		Password: r.Password,
+	}, nil
+}
+
+func (r UpdateAvatarRequest) ToDomainModel() (interface{}, error) {
+	return domain.User{
+		Avatar: &r.AvatarBase64String,
 	}, nil
 }
