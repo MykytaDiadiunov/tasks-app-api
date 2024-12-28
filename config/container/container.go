@@ -5,6 +5,7 @@ import (
 	"go-rest-api/internal/app"
 	"go-rest-api/internal/infra/database"
 	"go-rest-api/internal/infra/database/repositories"
+	"go-rest-api/internal/infra/filesystem"
 	"go-rest-api/internal/infra/http/controllers"
 	"go-rest-api/internal/infra/http/middlewares"
 	"net/http"
@@ -37,13 +38,13 @@ func New() Container {
 	tknAuth := jwtauth.New("HS256", []byte(cfg.JwtSecret), nil)
 	db := database.New(cfg)
 
-	// cloudinaryService := filesystem.NewCloudinaryService(cfg)
+	cloudinaryService := filesystem.NewCloudinaryService(cfg)
 	// imageService := filesystem.NewImageStorageService("file_storage")
 
 	userRepo := repositories.NewUserRepository(db)
 	sessionRepo := repositories.NewSessionRepository(db)
 
-	userService := app.NewUserService(userRepo, cfg)
+	userService := app.NewUserService(userRepo, cfg, cloudinaryService)
 	sessionService := app.NewSessionService(sessionRepo, userService, tknAuth)
 
 	userController := controllers.NewUserController(userService)

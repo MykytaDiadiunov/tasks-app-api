@@ -23,7 +23,7 @@ func NewUserController(userService app.UserService) UserController {
 func (c UserController) FindMe() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := r.Context().Value(UserKey).(domain.User)
-		Success(w, resources.UserDto{}.ToDomainModel(user))
+		Success(w, resources.UserDto{}.DomainToDto(user))
 	}
 }
 
@@ -45,6 +45,28 @@ func (c UserController) Save() http.HandlerFunc {
 	}
 }
 
+func (c UserController) UpdateUserAvatar() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := r.Context().Value(UserKey).(domain.User)
+		userWithAvatarString, err := requests.Bind(r, requests.UpdateAvatarRequest{}, domain.User{})
+		if err != nil {
+			logger.Logger.Error(err)
+			BadRequest(w, err)
+			return
+		}
+
+		user.Avatar = userWithAvatarString.Avatar
+
+		newUser, err := c.userService.UpdateUserAvatar(user)
+		if err != nil {
+			logger.Logger.Error(err)
+			BadRequest(w, err)
+			return
+		}
+		Success(w, resources.UserDto{}.DomainToDto(newUser))
+	}
+}
+
 func (c UserController) ConfirmUserEmailByEmailConfirmationToken() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := r.Context().Value(UserKey).(domain.User)
@@ -63,6 +85,7 @@ func (c UserController) ConfirmUserEmailByEmailConfirmationToken() http.HandlerF
 			logger.Logger.Error(err)
 			BadRequest(w, err)
 		}
+		Ok(w)
 	}
 }
 
