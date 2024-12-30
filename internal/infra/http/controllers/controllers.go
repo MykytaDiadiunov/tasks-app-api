@@ -17,6 +17,7 @@ type CtxStrKey string
 var (
 	UserKey    = ctxKey{"user"}
 	SessionKey = ctxKey{"session"}
+	ProjectKey = ctxKey{"project"}
 )
 
 func GetPathValueInCtx[T any](ctx context.Context, value T) context.Context {
@@ -35,8 +36,8 @@ func (k CtxStrKey) UrlParam() string {
 
 func ResolveCtxKeyFromPathType(value any) CtxStrKey {
 	switch value.(type) {
-	case domain.User:
-		return CtxStrKey(UserKey.name)
+	case *domain.Project:
+		return CtxStrKey(ProjectKey.name)
 	default:
 		panic("unk type in resolveCtxKeyFromPathType (controller)")
 	}

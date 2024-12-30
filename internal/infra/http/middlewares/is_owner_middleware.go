@@ -8,7 +8,7 @@ import (
 )
 
 type Usable interface {
-	GetUserId() uint64
+	GetOwnerId() uint64
 }
 
 func IsOwnerMiddleware[domainType Usable]() func(http.Handler) http.Handler {
@@ -18,7 +18,7 @@ func IsOwnerMiddleware[domainType Usable]() func(http.Handler) http.Handler {
 			user := ctx.Value(controllers.UserKey).(domain.User)
 			object := controllers.GetPathValueFromCtx[domainType](ctx)
 
-			if object.GetUserId() != user.Id {
+			if object.GetOwnerId() != user.Id {
 				err := errors.New("you have no access to this object")
 				controllers.Forbidden(w, err)
 				return

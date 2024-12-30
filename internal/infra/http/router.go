@@ -3,7 +3,9 @@ package http
 import (
 	"errors"
 	"go-rest-api/config/container"
+	"go-rest-api/internal/domain"
 	"go-rest-api/internal/infra/http/controllers"
+	"go-rest-api/internal/infra/http/middlewares"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -35,7 +37,11 @@ func CreateRouter(con container.Container) http.Handler {
 				})
 				apiRouter.Route("/user", func(apiRouter chi.Router) {
 					apiRouter.Use(con.AuthMw)
-					UserRouter(apiRouter, con.UserController)
+					UserRouter(apiRouter, con)
+				})
+				apiRouter.Route("/project", func(apiRouter chi.Router) {
+					apiRouter.Use(con.AuthMw)
+					ProjectRouter(apiRouter, con)
 				})
 			})
 		})
@@ -61,20 +67,47 @@ func AuthRouter(r chi.Router, sc controllers.SessionController, amw func(http.Ha
 	})
 }
 
-func UserRouter(r chi.Router, uc controllers.UserController) {
+func UserRouter(r chi.Router, con container.Container) {
 	r.Route("/", func(apiRouter chi.Router) {
 		apiRouter.Get(
 			"/me",
-			uc.FindMe(),
+			con.UserController.FindMe(),
 		)
-		apiRouter.Post(
+		apiRouter.Put(
 			"/me/update/avatar",
-			uc.UpdateUserAvatar(),
+			con.UserController.UpdateUserAvatar(),
+		)
+		apiRouter.Get(
+			"/me/projects",
+			con.ProjectController.GetMyProjects(),
 		)
 		// apiRouter.Get(
 		// 	"/email/confirm/{token}",
 		// 	uc.ConfirmUserEmailByEmailConfirmationToken(),
 		// )
+	})
+}
+
+func ProjectRouter(r chi.Router, con container.Container) {
+	pathObjMw := middlewares.PathObjectMiddleware(con.ProjectService)
+	isOwnerMw := middlewares.IsOwnerMiddleware[domain.Project]()
+	r.Route("/", func(apiRouter chi.Router) {
+		apiRouter.Get(
+			"/{projectId}",
+			con.ProjectController.FindProjectById(),
+		)
+		apiRouter.Post(
+			"/",
+			con.ProjectController.CreateProject(),
+		)
+		apiRouter.With(pathObjMw).With(isOwnerMw).Put(
+			"/{projectId}",
+			con.ProjectController.UpdateProjecTitleAndDescription(),
+		)
+		apiRouter.With(pathObjMw).With(isOwnerMw).Delete(
+			"/{projectId}",
+			con.ProjectController.DeleteProjectById(),
+		)
 	})
 }
 
