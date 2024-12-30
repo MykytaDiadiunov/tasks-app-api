@@ -22,11 +22,13 @@ type Container struct {
 type Services struct {
 	app.UserService
 	app.SessionService
+	app.ProjectService
 }
 
 type Controllers struct {
 	controllers.UserController
 	controllers.SessionController
+	controllers.ProjectController
 }
 
 type Middleware struct {
@@ -43,12 +45,15 @@ func New() Container {
 
 	userRepo := repositories.NewUserRepository(db)
 	sessionRepo := repositories.NewSessionRepository(db)
+	projectRepo := repositories.NewProjectRepository(db)
 
 	userService := app.NewUserService(userRepo, cfg, cloudinaryService)
 	sessionService := app.NewSessionService(sessionRepo, userService, tknAuth)
+	projectService := app.NewProjectService(projectRepo)
 
 	userController := controllers.NewUserController(userService)
 	sessionController := controllers.NewSessionController(sessionService, userService)
+	projectController := controllers.NewProjectController(projectService)
 
 	authMiddleware := middlewares.AuthMiddleware(tknAuth, sessionService, userService)
 
@@ -56,10 +61,12 @@ func New() Container {
 		Services: Services{
 			userService,
 			sessionService,
+			projectService,
 		},
 		Controllers: Controllers{
 			userController,
 			sessionController,
+			projectController,
 		},
 		Middleware: Middleware{
 			authMiddleware,

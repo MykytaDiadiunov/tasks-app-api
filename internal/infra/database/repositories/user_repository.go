@@ -6,16 +6,6 @@ import (
 	"go-rest-api/internal/infra/logger"
 )
 
-type user struct {
-	Id                     uint64  `db:"id, omitempty"`
-	Name                   string  `db:"name"`
-	Email                  string  `db:"email"`
-	Avatar                 *string `db:"avatar"`
-	Password               string  `db:"password"`
-	EmailConfirmed         bool    `db:"email_confirmed"`
-	EmailConfirmationToken string  `db:"email_confirmation_token"`
-}
-
 type UserRepository interface {
 	FindById(id uint64) (domain.User, error)
 	FindByEmail(email string) (domain.User, error)
@@ -26,12 +16,22 @@ type UserRepository interface {
 	Delete(id uint64) error
 }
 
+type user struct {
+	Id                     uint64  `db:"id, omitempty"`
+	Name                   string  `db:"name"`
+	Email                  string  `db:"email"`
+	Avatar                 *string `db:"avatar"`
+	Password               string  `db:"password"`
+	EmailConfirmed         bool    `db:"email_confirmed"`
+	EmailConfirmationToken string  `db:"email_confirmation_token"`
+}
+
 type userRepository struct {
 	db *sql.DB
 }
 
 func NewUserRepository(db *sql.DB) UserRepository {
-	return &userRepository{
+	return userRepository{
 		db: db,
 	}
 }

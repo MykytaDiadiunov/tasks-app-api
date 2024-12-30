@@ -13,7 +13,7 @@ import (
 )
 
 type FindableT[T any] interface {
-	Find(uint64) (T, error)
+	FindById(uint64) (T, error)
 }
 
 func PathObjectMiddleware[domainType any](service FindableT[domainType]) func(http.Handler) http.Handler {
@@ -26,7 +26,7 @@ func PathObjectMiddleware[domainType any](service FindableT[domainType]) func(ht
 				controllers.BadRequest(w, err)
 				return
 			}
-			object, err := service.Find(objectId)
+			object, err := service.FindById(objectId)
 			if err != nil {
 				if errors.Is(err, sql.ErrNoRows) {
 					err = fmt.Errorf("record not found")

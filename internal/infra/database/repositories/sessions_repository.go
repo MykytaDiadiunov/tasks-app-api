@@ -9,15 +9,15 @@ import (
 	"github.com/google/uuid"
 )
 
-type session struct {
-	UserId uint64    `db:"user_id"`
-	UUID   uuid.UUID `db:"uuid"`
-}
-
 type SessionRepository interface {
 	Save(sess domain.Session) error
 	Exists(sess domain.Session) error
 	Delete(sess domain.Session) error
+}
+
+type session struct {
+	UserId uint64    `db:"user_id"`
+	UUID   uuid.UUID `db:"uuid"`
 }
 
 type sessionRepository struct {
@@ -25,7 +25,7 @@ type sessionRepository struct {
 }
 
 func NewSessionRepository(db *sql.DB) SessionRepository {
-	return &sessionRepository{
+	return sessionRepository{
 		db: db,
 	}
 }
